@@ -904,10 +904,32 @@ namespace usbguard
       throw USBGUARD_BUG("Invalid DevicePolicyMethod value");
     }
 
+    bool implicit_rule = policy_rule->getRuleID() == Rule::ImplicitID;
     if (policy_rule == nullptr) {
       policy_rule = std::make_shared<Rule>();
       policy_rule->setTarget(target);
       policy_rule->setRuleID(Rule::RootID);
+    }
+    else if (implicit_rule) {
+      DeviceManager::AuthorizedDefaultType authorized_default = _dm->getAuthorizedDefault();
+      switch (authorized_default) {
+          case DeviceManager::AuthorizedDefaultType::All:
+            target = Rule::Target::Allow;
+            break;
+          case DeviceManager::AuthorizedDefaultType::None:
+            target = Rule::Target::Block;
+            break;
+          case DeviceManager::AuthorizedDefaultType::Wired:
+            target = device->getWired() ? Rule::Target::Allow : Rule::Target::Block;
+            break;
+          case DeviceManager::AuthorizedDefaultType::Internal:
+            target = device->getConnectType() == "hotplug" ? Rule::Target::Block : Rule::Target::Allow;
+            break;
+          case DeviceManager::AuthorizedDefaultType::Keep:
+          default:
+            return policy_rule;
+      }
+      policy_rule->setTarget(target);
     }
 
     return policy_rule;

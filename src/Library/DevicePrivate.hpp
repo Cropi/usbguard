@@ -82,6 +82,9 @@ namespace usbguard
     void setConnectType(const std::string& connect_type);
     const std::string& getConnectType() const;
 
+    void setWired(const bool wired);
+    bool getWired() const;
+
     std::vector<USBInterfaceType>& refMutableInterfaceTypes();
     const std::vector<USBInterfaceType>& getInterfaceTypes() const;
 
@@ -103,6 +106,7 @@ namespace usbguard
     std::string _serial_number;
     std::string _port;
     std::string _connect_type;
+    bool _wired;
     std::vector<USBInterfaceType> _interface_types;
     std::string _hash_base64;
     Hash _hash;

@@ -48,29 +48,6 @@
 
 namespace usbguard
 {
-  namespace
-  {
-    void setDeviceAuthorizedDefault(SysFSDevice* device, DeviceManager::AuthorizedDefaultType auth_default)
-    {
-      if (auth_default == DeviceManager::AuthorizedDefaultType::Keep) {
-        return;
-      }
-
-      std::string auth_default_str = std::to_string(DeviceManager::authorizedDefaultTypeToInteger(auth_default));
-      device->setAttribute("authorized_default", auth_default_str);
-
-      if (device->readAttribute("authorized_default", /*strip_last_null=*/true) != auth_default_str) {
-        if (auth_default == DeviceManager::AuthorizedDefaultType::Internal) {
-          USBGUARD_LOG(Warning) << "No kernel support for authorized_default = 2, falling back to 0";
-          setDeviceAuthorizedDefault(device, DeviceManager::AuthorizedDefaultType::None);
-        }
-        else {
-          throw Exception("UEventDevice", device->getPath(), "Failed to set authorized_default to \"" + auth_default_str + "\"");
-        }
-      }
-    }
-  }  /* namespace */
-
   UEventDevice::UEventDevice(UEventDeviceManager& device_manager, SysFSDevice& sysfs_device)
     : Device(device_manager)
   {
@@ -108,6 +85,8 @@ namespace usbguard
      * Set USB port
      */
     setPort(sysfs_device.getName());
+    std::string device_class = sysfs_device.readAttribute("bDeviceClass", /*strip_last_null=*/true, /*optional=*/true);
+    setWired(device_class != "224");
     /*
      * Sync authorization target
      */
@@ -281,7 +260,7 @@ namespace usbguard
   UEventDeviceManager::~UEventDeviceManager()
   {
     if (getRestoreControllerDeviceState()) {
-      setAuthorizedDefault(AuthorizedDefaultType::All); // FIXME: Set to previous state
+      // FIXME: Set to previous state
     }
 
     stop();
@@ -862,13 +841,6 @@ namespace usbguard
   {
     try {
       std::shared_ptr<UEventDevice> device = std::make_shared<UEventDevice>(*this, sysfs_device);
-      DeviceManager::AuthorizedDefaultType auth_default = getAuthorizedDefault();
-
-      if (device->isController() && !_enumeration_only_mode) {
-        USBGUARD_LOG(Debug) << "Setting default blocked state for controller device to " <<
-          DeviceManager::authorizedDefaultTypeToString(auth_default);
-        setDeviceAuthorizedDefault(&device->sysfsDevice(), auth_default);
-      }
 
       insertDevice(device);
 

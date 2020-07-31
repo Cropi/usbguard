@@ -289,6 +289,16 @@ namespace usbguard
     return _connect_type;
   }
 
+  void DevicePrivate::setWired(const bool wired)
+  {
+    _wired = wired;
+  }
+
+  bool DevicePrivate::getWired() const
+  {
+    return _wired;
+  }
+
   std::vector<USBInterfaceType>& DevicePrivate::refMutableInterfaceTypes()
   {
     return _interface_types;

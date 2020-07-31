@@ -292,6 +292,20 @@ namespace usbguard
     const std::string& getConnectType() const;
 
     /**
+     * @brief Sets device wired attribute
+     *
+     * @param wired wired attribute to set.
+     */
+    void setWired(const bool wired);
+
+    /**
+     * @brief Returns device wired attribute
+     *
+     * @return True if device is wired, otherwise false.
+     */
+    bool getWired() const;
+
+    /**
      * @brief Returns reference to mutable vector of interface types
      * of this USB device.
      *

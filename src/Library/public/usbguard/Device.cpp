@@ -173,6 +173,16 @@ namespace usbguard
     return d_pointer->getConnectType();
   }
 
+  void Device::setWired(const bool wired)
+  {
+    d_pointer->setWired(wired);
+  }
+
+  bool Device::getWired() const
+  {
+    return d_pointer->getWired();
+  }
+
   std::vector<USBInterfaceType>& Device::refMutableInterfaceTypes()
   {
     return d_pointer->refMutableInterfaceTypes();
