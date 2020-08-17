@@ -6,7 +6,7 @@ compiler:
 - clang
 - gcc
 os: linux
-dist: bionic
+dist: focal
 matrix:
   include:
     - os: linux
