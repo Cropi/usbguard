@@ -22,3 +22,4 @@ git submodule update --init
 mkdir -p ./m4
 autoreconf -i -s --no-recursive ./
 
+# Add dummy comment

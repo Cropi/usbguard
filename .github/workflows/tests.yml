@@ -1,0 +1,73 @@
+---
+name: Build and run tests
+on: [pull_request, push]
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                compiler: [gcc, clang]
+        steps:
+            - uses: actions/checkout@v2
+
+            - name: Install dependencies
+              run: |
+                sudo apt-get update -qq
+                sudo apt-get install -qqy \
+                ansible \
+                libudev-dev \
+                libsodium-dev \
+                libqb-dev \
+                libcap-ng-dev \
+                libseccomp-dev \
+                libglib2.0-dev \
+                libdbus-glib-1-dev \
+                libxml2-utils \
+                libpolkit-gobject-1-dev \
+                xsltproc \
+                lcov \
+                aspell \
+                aspell-en \
+                libprotobuf-dev protobuf-compiler \
+                libldap-dev \
+                valgrind \
+                asciidoc docbook-xml docbook-xsl \
+                clang
+                sudo gem install coveralls-lcov
+
+            - name: Download astyle tarball
+              run: |
+                curl -JLo /tmp/astyle.tgz --remote-header-name 'https://netcologne.dl.sourceforge.net/project/astyle/astyle/astyle%203.1/astyle_3.1_linux.tar.gz'
+
+            - name: Prepare environment
+              run: |
+                pushd .
+                cd /tmp
+                tar zxvf astyle.tgz
+                cd astyle/build/gcc
+                make && sudo make install
+                popd
+                pushd .
+                cd src/Tests/LDAP/ansible
+                ansible-playbook -i ./hosts -u root --connection=local playbook.yml
+                popd
+                pushd /tmp
+                wget --retry-on-http-error=429 --timeout=1 --tries=20 https://github.com/protocolbuffers/protobuf/releases/download/v3.11.3/protobuf-cpp-3.11.3.tar.gz
+                tar -xzvf protobuf-cpp-3.11.3.tar.gz
+                CXXB=${CXX}
+                CXX=g++
+                pushd protobuf-3.11.3 && ./configure && make -j$(nproc) && sudo make install && sudo ldconfig && popd
+                CXX=${CXXB}
+                popd
+
+            - name: Compile
+              run: |
+                ./autogen.sh
+                mkdir build && cd build
+                echo ${COMPILER_CXX} ${COMPILER_C}
+                CXX=${COMPILER_CXX} CC=${COMPILER_C} ../configure --enable-werror --disable-silent-rules --with-bundled-catch --with-bundled-pegtl --with-ldap --enable-full-test-suite $CONFIGURE_ARGS
+
+            - name: Run test suite
+              run: |
+                if test -n "$MAKE_ARGS"; then make $MAKE_ARGS; else make all; VERBOSE=1 make check; fi
